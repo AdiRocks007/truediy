@@ -1,0 +1,29 @@
+/* ProjectPopup.css */
+.project-popup-card {
+  width: 100%;
+  max-width: 26rem;
+  margin: auto;
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.project-popup-card .card-header img {
+  max-width: 100%;
+  height: auto;
+}
+
+.project-popup-card .card-header .icon-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+}
+
+.project-popup-card .card-body {
+  padding: 1rem;
+}
+
+.project-popup-card .card-footer {
+  padding: 1rem;
+}
