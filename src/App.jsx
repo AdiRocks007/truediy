@@ -1,5 +1,4 @@
-// App.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import './App.css';
 import { Box, Button } from '@mui/material';
@@ -64,7 +63,7 @@ function MainContent({ view, projects, handleSearch, handleFilterChange, filters
 
 function App() {
   const [projects, setProjects] = useState([]);
-  const [view, setView] = useState('grid');
+  const [view, setView] = useState('map');
   const [filters, setFilters] = useState({
     searchTerm: '',
     investmentType: '',
@@ -74,18 +73,21 @@ function App() {
   });
   const [offset, setOffset] = useState(0);
   const [totalProjects, setTotalProjects] = useState(0);
-  const [loading, setLoading] = useState(false); // New loading state
+  const [loading, setLoading] = useState(false);
   const limit = 12;
 
-  const fetchProjects = async (newFilters, newOffset) => {
-    if (loading) return; // Prevent multiple calls
+  const fetchProjects = async (newFilters, newOffset = 0, newView = view) => {
+    if (loading) return;
+
+    const appliedLimit = newView === 'grid' ? limit : undefined; // Use limit only for grid view
+    console.log(`Fetching projects with limit: ${appliedLimit}`);
 
     setLoading(true);
     try {
       const response = await axios.post('http://localhost:3000/api/projects', {
         ...newFilters,
         offset: newOffset,
-        limit
+        limit: appliedLimit // Pass the limit value to the API
       }, {
         headers: {
           'Content-Type': 'application/json',
@@ -94,14 +96,12 @@ function App() {
 
       const { projects, totalProjects } = response.data;
 
-      if (newOffset === 0) {
+      if (newOffset === 0 || newView !== view) {
         setProjects(projects);
       } else {
         setProjects(prevProjects => [...prevProjects, ...projects]);
       }
       setTotalProjects(totalProjects);
-
-      console.log(`Batch loaded: Offset ${newOffset}, Limit ${limit}`);
     } catch (error) {
       console.error('Error fetching projects:', error);
     } finally {
@@ -110,33 +110,38 @@ function App() {
   };
 
   useEffect(() => {
-    fetchProjects(filters, offset);
-  }, [filters, offset]);
+    fetchProjects(filters, 0, view);
+  }, [filters, view]);
 
   const handleSearch = (term) => {
     setFilters(prevFilters => ({ ...prevFilters, searchTerm: term }));
-    setOffset(0); // Reset offset when filters change
+    setOffset(0);
   };
 
   const handleFilterChange = (name, value) => {
     setFilters(prevFilters => ({ ...prevFilters, [name]: value }));
-    setOffset(0); // Reset offset when filters change
+    setOffset(0);
   };
 
   const setMinInvestment = (value) => {
     setFilters(prevFilters => ({ ...prevFilters, minInvestment: value }));
-    setOffset(0); // Reset offset when filters change
+    setOffset(0);
   };
 
   const toggleView = () => {
-    setView(view === 'grid' ? 'map' : 'grid');
+    const newView = view === 'grid' ? 'map' : 'grid';
+    setView(newView);
+    setOffset(0);
+    fetchProjects(filters, 0, newView);
   };
 
   const loadMoreProjects = () => {
-    if (projects.length < totalProjects && !loading) {
-      setOffset(prevOffset => prevOffset + limit);
-    } else {
-      console.log('No more projects to load or currently loading');
+    if (view === 'grid' && projects.length < totalProjects && !loading) {
+      setOffset(prevOffset => {
+        const newOffset = prevOffset + limit;
+        fetchProjects(filters, newOffset, view);
+        return newOffset;
+      });
     }
   };
 

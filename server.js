@@ -212,11 +212,14 @@ app.use(cors());
 // Your existing routes
 app.post('/api/projects', (req, res) => {
     try {
-        const { offset = 0, limit = 12, ...filters } = req.body;
+        const { offset = 0, limit, ...filters } = req.body;
 
         const filteredProjects = filterProjects(projects, filters);
         const totalProjects = filteredProjects.length;
-        const paginatedProjects = filteredProjects.slice(offset, offset + limit);
+
+        const paginatedProjects = limit !== undefined
+            ? filteredProjects.slice(offset, offset + limit)
+            : filteredProjects;
 
         res.json({
             projects: paginatedProjects,
@@ -227,6 +230,8 @@ app.post('/api/projects', (req, res) => {
         res.status(500).json({ error: error.toString() });
     }
 });
+
+
 app.use(bodyParser.json());
 
 // Route 1
